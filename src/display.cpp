@@ -1493,7 +1493,7 @@ void renderClockPage() {
         return;
     }
 
-    drawRoundedPanel(8, 154, 224, 66, theme.surfaceAlt, theme.surfaceAlt);
+    drawRoundedPanel(8, 152, 224, 82, theme.surfaceAlt, theme.surfaceAlt);
     if (hasWeatherContent()) {
         const WeatherData *weather = effectiveWeatherData();
         int footerLeft = 18;
@@ -1501,10 +1501,10 @@ void renderClockPage() {
         tft.setTextFont(FONT_INFO);
         tft.setTextColor(theme.muted, theme.surfaceAlt);
         String location = (weather != nullptr && weather->location[0] != '\0') ? weather->location : "Weather";
-        tft.drawString(location, footerLeft, 166, FONT_INFO);
+        tft.drawString(location, footerLeft, 164, FONT_INFO);
 
         drawAdaptiveBadge(158,
-                          160,
+                          158,
                           62,
                           24,
                           formatWeatherTemperature(weather->temperature),
@@ -1517,7 +1517,7 @@ void renderClockPage() {
         String condition = weather->condition[0] != '\0' ? weather->condition : "Ready";
         drawAdaptiveText(condition,
                          footerLeft,
-                         188,
+                         192,
                          132,
                          TL_DATUM,
                          footerConditionFonts,
@@ -1532,7 +1532,7 @@ void renderClockPage() {
                          "  Rain " + String(weather->rainChance) + "%";
         drawAdaptiveText(summary,
                          footerLeft,
-                         202,
+                         210,
                          188,
                          TL_DATUM,
                          compactFonts,
@@ -1561,17 +1561,17 @@ void renderWeatherPage() {
     const int heroFonts[] = {FONT_HUGE, FONT_TITLE, FONT_BODY};
     const int compactFonts[] = {FONT_BODY, FONT_LABEL, FONT_INFO};
     drawScreenChrome("Weather");
-    drawRoundedPanel(8, 36, 224, 110, theme.surface, theme.surfaceAlt);
+    drawRoundedPanel(8, 42, 224, 120, theme.surface, theme.surfaceAlt);
 
     tft.setTextDatum(TC_DATUM);
     tft.setTextFont(FONT_INFO);
     tft.setTextColor(theme.muted, theme.surface);
     tft.drawString(weather->location[0] != '\0' ? weather->location : "Weather",
-                   120, 50, FONT_INFO);
+                   120, 52, FONT_INFO);
 
     drawAdaptiveText(formatWeatherTemperature(weather->temperature),
                      120,
-                     74,
+                     78,
                      180,
                      TC_DATUM,
                      heroFonts,
@@ -1581,7 +1581,7 @@ void renderWeatherPage() {
 
     drawAdaptiveText(weather->condition[0] != '\0' ? weather->condition : "Updated",
                      120,
-                     118,
+                     134,
                      180,
                      TC_DATUM,
                      compactFonts,
@@ -1589,12 +1589,12 @@ void renderWeatherPage() {
                      theme.accent,
                      theme.surface);
 
-    drawRoundedPanel(8, 156, 224, 64, theme.surfaceAlt, theme.surfaceAlt);
-    drawDividerColumn(82, 168, 40, theme.background);
-    drawDividerColumn(156, 168, 40, theme.background);
-    drawMetricColumn(45, 170, "High", formatWeatherTemperature(weather->high), theme.muted, theme.text, theme.surfaceAlt);
-    drawMetricColumn(119, 170, "Low", formatWeatherTemperature(weather->low), theme.muted, theme.text, theme.surfaceAlt);
-    drawMetricColumn(193, 170, "Rain", String(weather->rainChance) + "%", theme.muted, theme.text, theme.surfaceAlt);
+    drawRoundedPanel(8, 168, 224, 62, theme.surfaceAlt, theme.surfaceAlt);
+    drawDividerColumn(82, 184, 40, theme.background);
+    drawDividerColumn(156, 184, 40, theme.background);
+    drawMetricColumn(45, 186, "High", formatWeatherTemperature(weather->high), theme.muted, theme.text, theme.surfaceAlt);
+    drawMetricColumn(119, 186, "Low", formatWeatherTemperature(weather->low), theme.muted, theme.text, theme.surfaceAlt);
+    drawMetricColumn(193, 186, "Rain", String(weather->rainChance) + "%", theme.muted, theme.text, theme.surfaceAlt);
 }
 
 void renderMarketsPage() {
@@ -1609,7 +1609,7 @@ void renderMarketsPage() {
     }
 
     drawScreenChrome("Markets");
-    drawRoundedPanel(8, 36, 224, 184, theme.surface, theme.surfaceAlt);
+    drawRoundedPanel(8, 42, 224, 184, theme.surface, theme.surfaceAlt);
 
     int y = 50;
     bool firstRow = true;
@@ -1696,7 +1696,7 @@ void drawHomeAssistantCard(int x,
     tft.fillRoundRect(x + 10, y + 10, 26, 4, 2, theme.accentSoft);
 
     const int labelFonts[] = {FONT_LABEL, FONT_INFO};
-    const int valueFonts[] = {FONT_TITLE, FONT_BODY, FONT_LABEL, FONT_INFO};
+    const int valueFonts[] = {FONT_BODY, FONT_LABEL, FONT_INFO};
     const int unitFonts[] = {FONT_INFO};
     const HomeAssistantSlotData *slot = feedsHomeAssistantSlotData(slotIndex);
     int labelY = y + 18;
@@ -1781,7 +1781,7 @@ void renderHomePage() {
     }
 
     drawScreenChrome("Home");
-    drawRoundedPanel(8, 36, 224, 184, theme.surface, theme.surfaceAlt);
+    drawRoundedPanel(8, 42, 224, 184, theme.surface, theme.surfaceAlt);
 
     uint8_t slotIndexes[HOME_ASSISTANT_SLOT_COUNT] = {0};
     uint8_t slotCount = 0;
@@ -1836,7 +1836,7 @@ void renderFocusPage() {
     const ThemePalette &theme = activeTheme();
     drawScreenChrome("Focus");
 
-    drawRoundedPanel(8, 36, 224, 184, theme.surface, theme.surfaceAlt);
+    drawRoundedPanel(8, 42, 224, 184, theme.surface, theme.surfaceAlt);
     drawBadge(18, 48, 64, 20, dashboardData.focus.breakMode ? "Break" : "Focus", theme.accentSoft, theme.accent);
 
     if (dashboardData.focus.running) {
@@ -1862,7 +1862,7 @@ void renderWorldPage() {
     }
 
     drawScreenChrome("World");
-    drawRoundedPanel(8, 36, 224, 184, theme.surface, theme.surfaceAlt);
+    drawRoundedPanel(8, 42, 224, 184, theme.surface, theme.surfaceAlt);
 
     int y = 52;
     bool firstRow = true;
@@ -1906,7 +1906,7 @@ void renderEventPage() {
     }
 
     drawScreenChrome("Event");
-    drawRoundedPanel(8, 36, 224, 184, theme.surface, theme.surfaceAlt);
+    drawRoundedPanel(8, 42, 224, 184, theme.surface, theme.surfaceAlt);
 
     drawWrappedCenteredText(dashboardData.event.title[0] != '\0' ? dashboardData.event.title : "Upcoming",
                             120, 56, 186, FONT_BODY, theme.text, theme.surface, 2);
@@ -1934,7 +1934,7 @@ void renderQuotePage() {
     }
 
     drawScreenChrome("Quote");
-    drawRoundedPanel(8, 36, 224, 184, theme.surface, theme.surfaceAlt);
+    drawRoundedPanel(8, 42, 224, 184, theme.surface, theme.surfaceAlt);
 
     tft.setTextDatum(TC_DATUM);
     tft.fillRoundRect(100, 52, 40, 40, 20, theme.accentSoft);
@@ -1970,7 +1970,7 @@ void renderStatusPage() {
 
     drawScreenChrome("Status");
 
-    drawRoundedPanel(8, 36, 224, 184, theme.surface, theme.surfaceAlt);
+    drawRoundedPanel(8, 42, 224, 184, theme.surface, theme.surfaceAlt);
     tft.setTextDatum(TC_DATUM);
     tft.setTextFont(FONT_TITLE);
     tft.setTextColor(theme.text, theme.surface);
