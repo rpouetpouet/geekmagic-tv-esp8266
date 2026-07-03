@@ -6,7 +6,7 @@
 #include "logger.h"
 #include <ESP8266WiFi.h>
 #include <LittleFS.h>
-#include <TJpg_Decoder.h>
+#include <picojpeg.h>
 #include <time.h>
 #include <vector>
 
@@ -323,15 +323,6 @@ void hashThemeConfig(uint32_t &hash) {
     hashCString(hash, selection.surface);
     hashCString(hash, selection.accent);
     hashCString(hash, selection.text);
-}
-
-bool tftOutput(int16_t x, int16_t y, uint16_t width, uint16_t height, uint16_t *bitmap) {
-    if (y >= tft.height()) {
-        return true;
-    }
-
-    tft.pushImage(x, y, width, height, bitmap);
-    return true;
 }
 
 const ThemePalette& activeTheme() {
@@ -2204,10 +2195,6 @@ void displayInit() {
     tft.invertDisplay(true);
     tft.fillScreen(TFT_BLACK);
 
-    TJpgDec.setJpgScale(1);
-    TJpgDec.setSwapBytes(true);
-    TJpgDec.setCallback(tftOutput);
-
     displayState.line2[0] = '\0';
     displayState.ipInfo[0] = '\0';
     displayState.showImage = false;
@@ -2476,41 +2463,98 @@ void displayBlankScreen() {
     logPrint(F("Display blanked to black."));
 }
 
+// Read callback for picojpeg
+static File jpegFile;
+static unsigned char jpegReadCallback(unsigned char* pBuf, unsigned char buf_size, unsigned char *pBytesActuallyRead, void *pCallbackData) {
+    (void)pCallbackData;
+    *pBytesActuallyRead = jpegFile.read(pBuf, buf_size);
+    return 0;
+}
+
 void displayRenderImage(const char *path) {
     if (!LittleFS.exists(path)) {
         displayShowMessage(F("Image not found"));
         return;
     }
 
-    File jpgFile = LittleFS.open(path, "r");
-    if (!jpgFile) {
+    jpegFile = LittleFS.open(path, "r");
+    if (!jpegFile) {
         displayShowMessage(String(F("Failed to open\n")) + path);
         return;
     }
 
-    uint16_t imgW = 0, imgH = 0;
-    JRESULT sizeResult = TJpgDec.getFsJpgSize(&imgW, &imgH, jpgFile);
-    if (sizeResult != JDR_OK) {
-        jpgFile.close();
-        displayShowMessage(String(F("JPEG size error\n")) + String(sizeResult));
+    pjpeg_image_info_t imgInfo;
+    uint8_t result = pjpeg_decode_init(&imgInfo, jpegReadCallback, NULL, 0);
+    if (result != 0) {
+        jpegFile.close();
+        displayShowMessage(String(F("JPEG init error\n")) + String(result));
         return;
     }
 
-    uint8_t scale = 1;
+    // Calculate scale (nearest-neighbour subsample factor)
     const int displayW = 240, displayH = 240;
-    while ((imgW / scale > displayW || imgH / scale > displayH) && scale < 8) {
+    uint8_t scale = 1;
+    while ((imgInfo.m_width / scale > displayW || imgInfo.m_height / scale > displayH) && scale < 8) {
         scale *= 2;
     }
 
-    TJpgDec.setJpgScale(scale);
-    tft.startWrite();
-    JRESULT result = TJpgDec.drawFsJpg(0, 0, jpgFile);
-    tft.endWrite();
-    jpgFile.close();
+    int outW = imgInfo.m_width / scale;
+    int outH = imgInfo.m_height / scale;
+    int xOffset = (displayW - outW) / 2;
+    int yOffset = (displayH - outH) / 2;
 
-    if (result != JDR_OK) {
-        displayShowMessage(String(F("JPEG error\n")) + String(result));
+    int mcuW = imgInfo.m_MCUWidth;
+    int mcuH = imgInfo.m_MCUHeight;
+    int mcuOutW = mcuW / scale;
+    int mcuOutH = mcuH / scale;
+
+    tft.setSwapBytes(true);
+    tft.startWrite();
+
+    for (int mcuRow = 0; mcuRow < imgInfo.m_MCUSPerCol; mcuRow++) {
+        for (int mcuCol = 0; mcuCol < imgInfo.m_MCUSPerRow; mcuCol++) {
+            result = pjpeg_decode_mcu();
+            if (result != 0 && result != PJPG_NO_MORE_BLOCKS) {
+                tft.endWrite();
+                jpegFile.close();
+                displayShowMessage(String(F("JPEG error\n")) + String(result));
+                return;
+            }
+
+            // Render MCU: blit each 8x8 block into a tile buffer, then pushImage
+            uint16_t tileBuf[mcuOutW * mcuOutH];
+            int blocksPerRow = mcuW / 8;
+            int blocksPerCol = mcuH / 8;
+
+            for (int by = 0; by < blocksPerCol; by++) {
+                for (int bx = 0; bx < blocksPerRow; bx++) {
+                    int blockIdx = by * blocksPerRow + bx;
+                    uint8_t *rBlk = imgInfo.m_pMCUBufR + blockIdx * 64;
+                    uint8_t *gBlk = imgInfo.m_pMCUBufG + blockIdx * 64;
+                    uint8_t *bBlk = imgInfo.m_pMCUBufB + blockIdx * 64;
+
+                    // Nearest-neighbour subsample this 8x8 block
+                    for (int py = 0; py < 8; py += scale) {
+                        for (int px = 0; px < 8; px += scale) {
+                            int tX = bx * 8 / scale + px / scale;
+                            int tY = by * 8 / scale + py / scale;
+                            int pixIdx = py * 8 + px;
+                            tileBuf[tY * mcuOutW + tX] = tft.color565(
+                                rBlk[pixIdx], gBlk[pixIdx], bBlk[pixIdx]
+                            );
+                        }
+                    }
+                }
+            }
+
+            int screenX = mcuCol * mcuOutW + xOffset;
+            int screenY = mcuRow * mcuOutH + yOffset;
+            tft.pushImage(screenX, screenY, mcuOutW, mcuOutH, tileBuf);
+        }
     }
+
+    tft.endWrite();
+    jpegFile.close();
 }
 
 void displayShowMessage(const String &msg) {
