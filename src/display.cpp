@@ -700,14 +700,15 @@ void drawAdaptiveBadge(int x,
                        const int *fontCandidates,
                        size_t fontCandidateCount,
                        uint16_t fillColor,
-                       uint16_t textColor) {
+                       uint16_t textColor,
+                       int textYOffset = 0) {
     tft.fillRoundRect(x, y, width, height, height / 2, fillColor);
     tft.setTextDatum(MC_DATUM);
 
     int font = chooseFittingFont(label, max(0, width - 12), fontCandidates, fontCandidateCount);
     tft.setTextFont(font);
     tft.setTextColor(textColor, fillColor);
-    tft.drawString(label, x + (width / 2), y + (height / 2), font);
+    tft.drawString(label, x + (width / 2), y + (height / 2) + textYOffset, font);
 }
 
 void drawAdaptiveText(const String &text,
@@ -1506,12 +1507,13 @@ void renderClockPage() {
         drawAdaptiveBadge(158,
                           158,
                           62,
-                          24,
+                          26,
                           formatWeatherTemperature(weather->temperature),
                           footerTemperatureFonts,
                           sizeof(footerTemperatureFonts) / sizeof(footerTemperatureFonts[0]),
                           theme.accentSoft,
-                          theme.accent);
+                          theme.accent,
+                          1);
 
         tft.setTextColor(theme.text, theme.surfaceAlt);
         String condition = weather->condition[0] != '\0' ? weather->condition : "Ready";
