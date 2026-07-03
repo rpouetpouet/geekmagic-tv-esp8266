@@ -5,7 +5,7 @@
 #include "dashboard.h"
 
 #define FEEDS_CONFIG_PATH "/feeds-config.json"
-#define FEEDS_CONFIG_VERSION 2
+#define FEEDS_CONFIG_VERSION 3
 #define HOME_ASSISTANT_SLOT_COUNT 4
 
 enum WeatherFeedSource : uint8_t {
@@ -49,6 +49,9 @@ struct HomeAssistantSlotConfig {
     char entityId[72];
     char label[24];
     char unit[12];
+    uint8_t displayMode;
+    float gaugeMin;
+    float gaugeMax;
 };
 
 struct HomeAssistantConfig {
@@ -95,6 +98,8 @@ struct HomeAssistantSlotData {
     char label[24];
     char state[24];
     char unit[12];
+    float gaugeValue;
+    float gaugeMax;
 };
 
 struct HomeAssistantRuntime {

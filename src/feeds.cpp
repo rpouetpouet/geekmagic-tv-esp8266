@@ -601,6 +601,14 @@ void normalizeConfig() {
         trimAndCopyString(slot.label, sizeof(slot.label), slot.label);
         trimAndCopyString(slot.unit, sizeof(slot.unit), slot.unit);
     }
+
+    // Defaults for gauge config on new/migrated slots
+    for (uint8_t index = 0; index < HOME_ASSISTANT_SLOT_COUNT; ++index) {
+        HomeAssistantSlotConfig &slot = homeAssistant.slots[index];
+        if (slot.displayMode > 1) slot.displayMode = 0;
+        if (!isfinite(slot.gaugeMin)) slot.gaugeMin = 0.0f;
+        if (!isfinite(slot.gaugeMax) || slot.gaugeMax <= slot.gaugeMin) slot.gaugeMax = 100.0f;
+    }
 }
 
 void clearRuntimeForInactiveSources() {
@@ -686,7 +694,10 @@ bool homeAssistantSlotConfigEquals(const HomeAssistantSlotConfig &left, const Ho
     return left.enabled == right.enabled &&
            strcmp(left.entityId, right.entityId) == 0 &&
            strcmp(left.label, right.label) == 0 &&
-           strcmp(left.unit, right.unit) == 0;
+           strcmp(left.unit, right.unit) == 0 &&
+           left.displayMode == right.displayMode &&
+           fabsf(left.gaugeMin - right.gaugeMin) <= 0.0001f &&
+           fabsf(left.gaugeMax - right.gaugeMax) <= 0.0001f;
 }
 
 bool homeAssistantConfigEquals(const HomeAssistantConfig &left, const HomeAssistantConfig &right) {
@@ -760,6 +771,8 @@ void fillHomeAssistantSlotDataJson(JsonObject root, const HomeAssistantSlotData 
     root["label"] = slot.label;
     root["state"] = slot.state;
     root["unit"] = slot.unit;
+    root["gaugeValue"] = slot.gaugeValue;
+    root["gaugeMax"] = slot.gaugeMax;
 }
 
 void fillWeatherStatusJson(JsonObject root, const WeatherFeedRuntime &runtime) {
@@ -842,6 +855,9 @@ void fillConfigJson(JsonObject root) {
         slot["entityId"] = feedConfig.homeAssistant.slots[index].entityId;
         slot["label"] = feedConfig.homeAssistant.slots[index].label;
         slot["unit"] = feedConfig.homeAssistant.slots[index].unit;
+        slot["displayMode"] = feedConfig.homeAssistant.slots[index].displayMode;
+        slot["gaugeMin"] = feedConfig.homeAssistant.slots[index].gaugeMin;
+        slot["gaugeMax"] = feedConfig.homeAssistant.slots[index].gaugeMax;
     }
 }
 
@@ -1578,6 +1594,13 @@ bool syncHomeAssistantSlot(uint8_t index, String *error) {
     copyString(runtimeSlot.label, sizeof(runtimeSlot.label), label.c_str());
     copyString(runtimeSlot.state, sizeof(runtimeSlot.state), displayState.c_str());
     copyString(runtimeSlot.unit, sizeof(runtimeSlot.unit), unit.c_str());
+    if (runtimeSlot.numeric) {
+        runtimeSlot.gaugeValue = strtof(runtimeSlot.state, nullptr);
+        runtimeSlot.gaugeMax = slot.gaugeMax;
+    } else {
+        runtimeSlot.gaugeValue = 0.0f;
+        runtimeSlot.gaugeMax = 100.0f;
+    }
     return true;
 }
 
@@ -1958,6 +1981,15 @@ void applyHomeAssistantObject(JsonObjectConst homeAssistant) {
             copyString(feedConfig.homeAssistant.slots[index].unit,
                        sizeof(feedConfig.homeAssistant.slots[index].unit),
                        slot["unit"]);
+        }
+        if (!slot["displayMode"].isNull()) {
+            feedConfig.homeAssistant.slots[index].displayMode = slot["displayMode"].as<uint8_t>();
+        }
+        if (!slot["gaugeMin"].isNull()) {
+            feedConfig.homeAssistant.slots[index].gaugeMin = slot["gaugeMin"].as<float>();
+        }
+        if (!slot["gaugeMax"].isNull()) {
+            feedConfig.homeAssistant.slots[index].gaugeMax = slot["gaugeMax"].as<float>();
         }
 
         ++index;

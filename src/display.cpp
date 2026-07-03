@@ -1685,6 +1685,17 @@ void renderMarketsPage() {
     }
 }
 
+void drawGauge(int x, int y, int width, int height, float progress,
+               uint16_t fillColor, uint16_t bgColor, uint16_t borderColor) {
+    (void)borderColor;
+    float clampedProgress = constrain(progress, 0.0f, 1.0f);
+    tft.fillRoundRect(x, y, width, height, height / 2, bgColor);
+    int fillWidth = static_cast<int>((width - 2) * clampedProgress);
+    if (fillWidth > 0) {
+        tft.fillRoundRect(x + 1, y + 1, fillWidth, height - 2, (height - 2) / 2, fillColor);
+    }
+}
+
 void drawHomeAssistantCard(int x,
                            int y,
                            int width,
@@ -1745,29 +1756,49 @@ void drawHomeAssistantCard(int x,
         stateColor = theme.muted;
     }
 
-    drawAdaptiveText(stateText,
-                     x + (width / 2),
-                     stateY,
-                     width - 20,
-                     TC_DATUM,
-                     valueFonts,
-                     sizeof(valueFonts) / sizeof(valueFonts[0]),
-                     stateColor,
-                     fillColor);
+    uint8_t dispMode = feedConfig.homeAssistant.slots[slotIndex].displayMode;
+    bool useGauge = (dispMode == 1 && slot != nullptr && slot->hasData && slot->numeric);
+
+    if (useGauge) {
+        // Draw gauge bar
+        int gaugeX = x + 12;
+        int gaugeWidth = width - 24;
+        int gaugeHeight = 16;
+        int gaugeY = stateY - (gaugeHeight / 2);
+        float gaugeProgress = (slot->gaugeMax > 0.0f) ? slot->gaugeValue / slot->gaugeMax : 0.0f;
+        drawGauge(gaugeX, gaugeY, gaugeWidth, gaugeHeight, gaugeProgress,
+                  theme.accent, theme.surface, theme.surfaceAlt);
+        // Draw value text centered over the gauge
+        tft.setTextDatum(TC_DATUM);
+        tft.setTextColor(TFT_WHITE, theme.accent);
+        tft.drawString(stateText, x + (width / 2), gaugeY + (gaugeHeight / 2) - 1, FONT_LABEL);
+    } else {
+        drawAdaptiveText(stateText,
+                         x + (width / 2),
+                         stateY,
+                         width - 20,
+                         TC_DATUM,
+                         valueFonts,
+                         sizeof(valueFonts) / sizeof(valueFonts[0]),
+                         stateColor,
+                         fillColor);
+    }
 
     if (slot != nullptr &&
         slot->hasData &&
         unit.length() > 0 &&
         (!slot->numeric || tft.textWidth(stateText, FONT_TITLE) > width - 30)) {
-        drawAdaptiveText(unit,
-                         x + (width / 2),
-                         unitY,
-                         width - 22,
-                         TC_DATUM,
-                         unitFonts,
-                         sizeof(unitFonts) / sizeof(unitFonts[0]),
-                         theme.muted,
-                         fillColor);
+        if (!useGauge) {
+            drawAdaptiveText(unit,
+                             x + (width / 2),
+                             unitY,
+                             width - 22,
+                             TC_DATUM,
+                             unitFonts,
+                             sizeof(unitFonts) / sizeof(unitFonts[0]),
+                             theme.muted,
+                             fillColor);
+        }
     }
 }
 
