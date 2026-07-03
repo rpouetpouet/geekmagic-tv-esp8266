@@ -327,7 +327,7 @@ void hashThemeConfig(uint32_t &hash) {
 
 bool tftOutput(int16_t x, int16_t y, uint16_t width, uint16_t height, uint16_t *bitmap) {
     if (y >= tft.height()) {
-        return false;
+        return true;
     }
 
     tft.pushImage(x, y, width, height, bitmap);
@@ -2488,6 +2488,21 @@ void displayRenderImage(const char *path) {
         return;
     }
 
+    uint16_t imgW = 0, imgH = 0;
+    JRESULT sizeResult = TJpgDec.getFsJpgSize(&imgW, &imgH, jpgFile);
+    if (sizeResult != JDR_OK) {
+        jpgFile.close();
+        displayShowMessage(String(F("JPEG size error\n")) + String(sizeResult));
+        return;
+    }
+
+    uint8_t scale = 1;
+    const int displayW = 240, displayH = 240;
+    while ((imgW / scale > displayW || imgH / scale > displayH) && scale < 8) {
+        scale *= 2;
+    }
+
+    TJpgDec.setJpgScale(scale);
     tft.startWrite();
     JRESULT result = TJpgDec.drawFsJpg(0, 0, jpgFile);
     tft.endWrite();
