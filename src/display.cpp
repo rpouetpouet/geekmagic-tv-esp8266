@@ -1760,11 +1760,11 @@ void drawHomeAssistantCard(int x,
     bool useGauge = (dispMode == 1 && slot != nullptr && slot->hasData && slot->numeric);
 
     if (useGauge) {
-        // Draw gauge bar
+        // Draw gauge bar (10px below original stateY)
         int gaugeX = x + 12;
         int gaugeWidth = width - 24;
         int gaugeHeight = 16;
-        int gaugeY = stateY - (gaugeHeight / 2);
+        int gaugeY = stateY - (gaugeHeight / 2) + 10;
         float gaugeProgress = (slot->gaugeMax > 0.0f) ? slot->gaugeValue / slot->gaugeMax : 0.0f;
         drawGauge(gaugeX, gaugeY, gaugeWidth, gaugeHeight, gaugeProgress,
                   theme.accent, theme.surface, theme.surfaceAlt);
@@ -1775,7 +1775,7 @@ void drawHomeAssistantCard(int x,
     } else {
         drawAdaptiveText(stateText,
                          x + (width / 2),
-                         stateY,
+                         stateY - 30,
                          width - 20,
                          TC_DATUM,
                          valueFonts,
