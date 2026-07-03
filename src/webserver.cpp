@@ -89,7 +89,8 @@ void copyString(char *destination, size_t destinationSize, const char *source) {
 }
 
 void copyConfiguredHostname(char *buffer, size_t bufferSize) {
-    settingsBuildHostname(appSettings.deviceName, buffer, bufferSize);
+    strncpy(buffer, "smolclock", bufferSize - 1);
+    buffer[bufferSize - 1] = '\0';
 }
 
 void copyDefaultDeviceName(char *buffer, size_t bufferSize) {

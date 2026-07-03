@@ -97,7 +97,8 @@ String generateRandomPassword(int length) {
 }
 
 void copyConfiguredHostname(char *buffer, size_t bufferSize) {
-    settingsBuildHostname(appSettings.deviceName, buffer, bufferSize);
+    strncpy(buffer, "smolclock", bufferSize - 1);
+    buffer[bufferSize - 1] = '\0';
 }
 
 void applyConfiguredHostname() {
