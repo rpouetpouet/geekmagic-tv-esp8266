@@ -1751,7 +1751,17 @@ void drawHomeAssistantCard(int x,
     bool useGauge = (dispMode == 1 && slot != nullptr && slot->hasData && slot->numeric);
 
     if (useGauge) {
-        // Draw gauge bar (10px below original stateY)
+        // Draw value text at same position as text mode (above the gauge bar)
+        drawAdaptiveText(stateText,
+                         x + (width / 2),
+                         stateY - 30,
+                         width - 20,
+                         TC_DATUM,
+                         valueFonts,
+                         sizeof(valueFonts) / sizeof(valueFonts[0]),
+                         stateColor,
+                         fillColor);
+        // Draw gauge bar below the text
         int gaugeX = x + 12;
         int gaugeWidth = width - 24;
         int gaugeHeight = 16;
@@ -1759,10 +1769,6 @@ void drawHomeAssistantCard(int x,
         float gaugeProgress = (slot->gaugeMax > 0.0f) ? slot->gaugeValue / slot->gaugeMax : 0.0f;
         drawGauge(gaugeX, gaugeY, gaugeWidth, gaugeHeight, gaugeProgress,
                   theme.accent, theme.surface, theme.surfaceAlt);
-        // Draw value text centered over the gauge
-        tft.setTextDatum(TC_DATUM);
-        tft.setTextColor(TFT_WHITE, theme.accent);
-        tft.drawString(stateText, x + (width / 2), gaugeY + (gaugeHeight / 2) - 1, FONT_LABEL);
     } else {
         drawAdaptiveText(stateText,
                          x + (width / 2),
